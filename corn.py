@@ -3,7 +3,9 @@ import yfinance as yf
 import numpy as np
 import matplotlib.pyplot as plt
 
-corn_df = pd.read_csv("crops_data/iowa_corn_temps_10y.csv", index_col="Date", parse_dates=True)
+corn_df = pd.read_csv(
+    "crops_data/iowa_corn_temps_10y.csv", index_col="Date", parse_dates=True
+)
 
 corn_prices = yf.download(
     "ZC=F", start="2015-01-01", end="2025-11-24", auto_adjust=True
@@ -11,8 +13,7 @@ corn_prices = yf.download(
 if isinstance(corn_prices.columns, pd.MultiIndex):
     corn_prices.columns = corn_prices.columns.droplevel(1)
 
-#inputs dataframe of asset
-#outputs two datetime arrays of extreme hot and cold dates
+
 def plot_extremes(df):
     extreme_hots = []
     extreme_colds = []
@@ -23,14 +24,26 @@ def plot_extremes(df):
     for i in range(len(df)):
         if df["Max_Temp_C"].iloc[i] > 34 and df.index[i].month in [7, 8]:
             if not hot_labeled:
-                plt.plot(df.index[i], df["Max_Temp_C"].iloc[i], "r^", markersize=10, label="Extreme Hot")
+                plt.plot(
+                    df.index[i],
+                    df["Max_Temp_C"].iloc[i],
+                    "r^",
+                    markersize=10,
+                    label="Extreme Hot",
+                )
                 hot_labeled = True
             else:
                 plt.plot(df.index[i], df["Max_Temp_C"].iloc[i], "r^", markersize=10)
             extreme_hots.append(df.index[i].date())
         if df["Min_Temp_C"].iloc[i] < 0 and df.index[i].month in [5, 9]:
             if not cold_labeled:
-                plt.plot(df.index[i], df["Min_Temp_C"].iloc[i], "b^", markersize=10, label="Extreme Cold")
+                plt.plot(
+                    df.index[i],
+                    df["Min_Temp_C"].iloc[i],
+                    "b^",
+                    markersize=10,
+                    label="Extreme Cold",
+                )
                 cold_labeled = True
             else:
                 plt.plot(df.index[i], df["Min_Temp_C"].iloc[i], "b^", markersize=10)
@@ -43,8 +56,6 @@ def plot_extremes(df):
     return pd.to_datetime(extreme_hots), pd.to_datetime(extreme_colds)
 
 
-#inputs dataframe of asset and two datatime arrays for extreme hot and cold dates
-#outputs plot of asset prices with markers for extreme hot and cold dates
 def plot_prices(prices, extreme_hots, extreme_colds):
     plt.plot(prices.index, prices["Close"])
     for date in extreme_hots:
@@ -62,8 +73,7 @@ def plot_prices(prices, extreme_hots, extreme_colds):
     plt.ylabel("Price (USD)")
     plt.show()
 
-#inputs two datetime arrays for extreme hot and cold dates and dataframe of asset
-#outputs list of buy signals
+
 def buy_signals(extremes_hots, extremes_colds, prices):
     all_dates = extremes_hots.union(extremes_colds)
     all_dates = all_dates.sort_values()
@@ -88,8 +98,7 @@ def buy_signals(extremes_hots, extremes_colds, prices):
     plt.show()
     return buy_signals
 
-#inputs dataframe of asset, list of buy signals, and holding period
-#outputs final portfolio value and annualized return
+
 def backtest_strategy(prices, buy_signals, holding_period):
     cash = 10000
     portfolio_value = pd.Series(index=prices.index, data=cash, dtype=float)
@@ -128,10 +137,10 @@ def backtest_strategy(prices, buy_signals, holding_period):
     return cash, annualized_return, portfolio_value
 
 
-#inputs dataframe of asset, list of buy signals, and holding period
-#outputs plot of portfolio value specified months
 def plot_returns(prices, buy_signals, holding_period):
-    cash, annualized_return, portfolio_value = backtest_strategy(prices, buy_signals, holding_period)
+    cash, annualized_return, portfolio_value = backtest_strategy(
+        prices, buy_signals, holding_period
+    )
     plt.figure(figsize=(10, 5))
     plt.plot(portfolio_value.index, portfolio_value, label="Portfolio Value")
     plt.title(f"Portfolio Value Over {holding_period} Months (Initial Cash: $10,000)")
@@ -141,7 +150,7 @@ def plot_returns(prices, buy_signals, holding_period):
     plt.legend()
     plt.show()
 
-# Helper function to get buy signals without plotting (for import)
+
 def get_corn_buy_signals():
     """Calculate corn buy signals without displaying plots"""
     extreme_hots = []
@@ -151,10 +160,10 @@ def get_corn_buy_signals():
             extreme_hots.append(corn_df.index[i].date())
         if corn_df["Min_Temp_C"].iloc[i] < 0 and corn_df.index[i].month in [5, 9]:
             extreme_colds.append(corn_df.index[i].date())
-    
+
     extreme_hots = pd.to_datetime(extreme_hots)
     extreme_colds = pd.to_datetime(extreme_colds)
-    
+
     all_dates = extreme_hots.union(extreme_colds)
     all_dates = all_dates.sort_values()
     signals = []
@@ -168,62 +177,74 @@ def get_corn_buy_signals():
             continue
         seen_months.add(month_key)
         signals.append(date)
-    
+
     return signals
 
 
-#inputs dataframe of asset, list of buy signals, and holding period range for test
-#outputs optimal holding period, the resulting cash, and dictionary of each month with its cash
 def optimize_holding_period(prices, buy_signals, min_months=1, max_months=12):
     print(f"--- Optimizing Strategy ({min_months}-{max_months} months) ---")
 
     cash_results = {}
     return_results = {}
     best_cash = 0
-    best_month = 0 
+    best_month = 0
 
-    for m in range(min_months, max_months+1):
-        cash, annualized_return, portfolio_value = backtest_strategy(prices, buy_signals, m)
+    for m in range(min_months, max_months + 1):
+        cash, annualized_return, portfolio_value = backtest_strategy(
+            prices, buy_signals, m
+        )
         profit = cash - 10000
-        print(f"Holding: {m} months | Final Cash: ${cash:,.2f} | Profit: ${profit:,.2f}")
+        print(
+            f"Holding: {m} months | Final Cash: ${cash:,.2f} | Profit: ${profit:,.2f}"
+        )
         cash_results[m] = cash
-        return_results[m] = profit/10000
+        return_results[m] = profit / 10000
         if cash > best_cash:
             best_cash = cash
             best_month = m
-    
+
     return best_month, best_cash, cash_results, return_results
 
 
 def plot_optimization_results(cash_results, return_results, best_months):
-    # Calculate percentage returns for each holding period
     cash_periods = list(cash_results.keys())
     cash_values = list(cash_results.values())
     return_values = list(return_results.values())
 
-    # Create figure with dual y-axes
     fig, ax1 = plt.subplots(figsize=(12, 6))
 
-    # Left y-axis: Portfolio Value (bars)
-    bars = ax1.bar(cash_periods, cash_values, color="skyblue", alpha=0.7, label="Portfolio Value")
-    bars[best_months - 1].set_color("green")  # Highlight the winner
-    ax1.axhline(y=10000, color="red", linestyle="--", linewidth=1.5, label="Starting Cash ($10k)")
-    ax1.set_xlabel("Holding Period (Months)", fontsize=12)
-    ax1.set_ylabel("Final Portfolio Value ($)", color="blue", fontsize=12)
-    ax1.tick_params(axis='y', labelcolor="blue")
+    bars = ax1.bar(
+        cash_periods, cash_values, color="skyblue", alpha=0.7, label="Portfolio Value"
+    )
+    bars[best_months - 1].set_color("green")
+    ax1.axhline(
+        y=10000,
+        color="red",
+        linestyle="--",
+        linewidth=1.5,
+        label="Starting Cash ($10k)",
+    )
+    ax1.set_xlabel("Holding Period (Months)")
+    ax1.set_ylabel("Final Portfolio Value ($)")
+    ax1.tick_params(axis="y")
     ax1.set_xticks(cash_periods)
     ax1.grid(True, alpha=0.3)
 
-    # Right y-axis: Percentage Return (line)
     ax2 = ax1.twinx()
-    line = ax2.plot(cash_periods, return_values, color="darkgreen", marker="o", 
-                    linewidth=2, markersize=6, label="% Return")
-    ax2.set_ylabel("Percentage Return (%)", color="darkgreen", fontsize=12)
-    ax2.tick_params(axis='y', labelcolor="darkgreen")
+    line = ax2.plot(
+        cash_periods,
+        return_values,
+        color="darkgreen",
+        marker="o",
+        linewidth=2,
+        markersize=6,
+        label="% Return",
+    )
+    ax2.set_ylabel("Percentage Return (%)")
+    ax2.tick_params(axis="y", labelcolor="darkgreen")
     ax2.axhline(y=0, color="gray", linestyle=":", linewidth=1, alpha=0.5)
 
-    # Title and combined legend
-    plt.title("Strategy Performance by Holding Period", fontsize=14, fontweight="bold")
+    plt.title("Strategy Performance by Holding Period")
     lines1, labels1 = ax1.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
     ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper left")
@@ -232,22 +253,18 @@ def plot_optimization_results(cash_results, return_results, best_months):
     plt.show()
 
 
-# Module-level variables for import
 corn_buy_signals = None
 
-# Only run this code when the file is executed directly
-if __name__ == "__main__":
-    extreme_hots, extreme_colds = plot_extremes(corn_df)
-    plot_prices(corn_prices, extreme_hots, extreme_colds)
-    corn_buy_signals = buy_signals(extreme_hots, extreme_colds, corn_prices)
-    print(corn_buy_signals)
-    cash, annualized_return, portfolio_value = backtest_strategy(corn_prices, corn_buy_signals, 6)
-    plot_returns(corn_prices, corn_buy_signals, 6)
 
-    best_months, best_pnl, cash_results, return_results = optimize_holding_period(corn_prices, corn_buy_signals, 1, 12)
-    print(best_months, best_pnl)
-
-    print(f"🏆 OPTIMAL RESULT: Hold for {best_months} Months")
-    print(f"💰 Max Portfolio Value: ${best_pnl:,.2f}")
-
-    plot_optimization_results(cash_results, return_results, best_months)
+extreme_hots, extreme_colds = plot_extremes(corn_df)
+plot_prices(corn_prices, extreme_hots, extreme_colds)
+corn_buy_signals = buy_signals(extreme_hots, extreme_colds, corn_prices)
+print(corn_buy_signals)
+cash, annualized_return, portfolio_value = backtest_strategy(
+    corn_prices, corn_buy_signals, 6
+)
+plot_returns(corn_prices, corn_buy_signals, 10)
+best_months, best_pnl, cash_results, return_results = optimize_holding_period(
+    corn_prices, corn_buy_signals, 1, 12
+)
+plot_optimization_results(cash_results, return_results, best_months)

@@ -3,15 +3,15 @@ import yfinance as yf
 import numpy as np
 import matplotlib.pyplot as plt
 
-soybeans_df = pd.read_csv(
-    "crops_data/iowa_soybean_temps_10y.csv", index_col="Date", parse_dates=True
+cotton_df = pd.read_csv(
+    "crops_data/west_texas_cotton_temps_10y.csv", index_col="Date", parse_dates=True
 )
 
-soybeans_prices = yf.download(
-    "ZS=F", start="2015-01-01", end="2025-11-24", auto_adjust=True
+cotton_prices = yf.download(
+    "CT=F", start="2015-01-01", end="2025-11-24", auto_adjust=True
 )
-if isinstance(soybeans_prices.columns, pd.MultiIndex):
-    soybeans_prices.columns = soybeans_prices.columns.droplevel(1)
+if isinstance(cotton_prices.columns, pd.MultiIndex):
+    cotton_prices.columns = cotton_prices.columns.droplevel(1)
 
 
 def plot_extremes(df):
@@ -22,7 +22,7 @@ def plot_extremes(df):
     plt.plot(df.index, df["Max_Temp_C"], label="Max Temp")
     plt.plot(df.index, df["Min_Temp_C"], label="Min Temp")
     for i in range(len(df)):
-        if df["Max_Temp_C"].iloc[i] > 33 and df.index[i].month in [8]:
+        if df["Max_Temp_C"].iloc[i] > 35 and df.index[i].month in [7, 8]:
             if not hot_labeled:
                 plt.plot(
                     df.index[i],
@@ -35,7 +35,7 @@ def plot_extremes(df):
             else:
                 plt.plot(df.index[i], df["Max_Temp_C"].iloc[i], "r^", markersize=10)
             extreme_hots.append(df.index[i].date())
-        if df["Min_Temp_C"].iloc[i] < -2 and df.index[i].month in [9, 10]:
+        if df["Min_Temp_C"].iloc[i] < 2 and df.index[i].month in [13]:
             if not cold_labeled:
                 plt.plot(
                     df.index[i],
@@ -48,7 +48,7 @@ def plot_extremes(df):
             else:
                 plt.plot(df.index[i], df["Min_Temp_C"].iloc[i], "b^", markersize=10)
             extreme_colds.append(df.index[i].date())
-    plt.title("Extreme Temperatures During soybeans Harvest")
+    plt.title("Extreme Temperatures During cotton Harvest")
     plt.xlabel("Date")
     plt.ylabel("Temperature (°C)")
     plt.legend()
@@ -68,7 +68,7 @@ def plot_prices(prices, extreme_hots, extreme_colds):
             plt.plot(date, prices.loc[date]["Close"], "bo", markersize=10)
         except KeyError:
             continue
-    plt.title("soybeans Prices During Extreme Temperatures")
+    plt.title("cotton Prices During Extreme Temperatures")
     plt.xlabel("Date")
     plt.ylabel("Price (USD)")
     plt.show()
@@ -113,7 +113,7 @@ def backtest_strategy(prices, buy_signals, holding_period):
             continue
 
         buy_price = prices.loc[buy_date]["Close"]
-        soybeans_shares = cash / buy_price
+        cotton_shares = cash / buy_price
         target_sell_date = buy_date + pd.DateOffset(months=holding_period)
         idx = prices.index.get_indexer([target_sell_date], method="nearest")[0]
         sell_date = prices.index[idx]
@@ -122,9 +122,9 @@ def backtest_strategy(prices, buy_signals, holding_period):
             break
 
         period_prices = prices.loc[buy_date:sell_date]["Close"]
-        portfolio_value.loc[buy_date:sell_date] = soybeans_shares * period_prices
+        portfolio_value.loc[buy_date:sell_date] = cotton_shares * period_prices
         sell_price = prices.loc[sell_date]["Close"]
-        cash = soybeans_shares * sell_price
+        cash = cotton_shares * sell_price
         portfolio_value.loc[sell_date:] = cash
         busy_until_date = sell_date
 
@@ -151,21 +151,15 @@ def plot_returns(prices, buy_signals, holding_period):
     plt.show()
 
 
-def get_soybeans_buy_signals():
-    """Calculate soybeans buy signals without displaying plots"""
+def get_cotton_buy_signals():
+    """Calculate cotton buy signals without displaying plots"""
     extreme_hots = []
     extreme_colds = []
-    for i in range(len(soybeans_df)):
-        if soybeans_df["Max_Temp_C"].iloc[i] > 34 and soybeans_df.index[i].month in [
-            7,
-            8,
-        ]:
-            extreme_hots.append(soybeans_df.index[i].date())
-        if soybeans_df["Min_Temp_C"].iloc[i] < 0 and soybeans_df.index[i].month in [
-            5,
-            9,
-        ]:
-            extreme_colds.append(soybeans_df.index[i].date())
+    for i in range(len(cotton_df)):
+        if cotton_df["Max_Temp_C"].iloc[i] > 34 and cotton_df.index[i].month in [7, 8]:
+            extreme_hots.append(cotton_df.index[i].date())
+        if cotton_df["Min_Temp_C"].iloc[i] < 0 and cotton_df.index[i].month in [5, 9]:
+            extreme_colds.append(cotton_df.index[i].date())
 
     extreme_hots = pd.to_datetime(extreme_hots)
     extreme_colds = pd.to_datetime(extreme_colds)
@@ -176,7 +170,7 @@ def get_soybeans_buy_signals():
     seen_months = set()
 
     for date in all_dates:
-        if date not in soybeans_prices.index or date.year == 2025:
+        if date not in cotton_prices.index or date.year == 2025:
             continue
         month_key = (date.year, date.month)
         if month_key in seen_months:
@@ -259,18 +253,18 @@ def plot_optimization_results(cash_results, return_results, best_months):
     plt.show()
 
 
-soybeans_buy_signals = None
+cotton_buy_signals = None
 
 
-extreme_hots, extreme_colds = plot_extremes(soybeans_df)
-plot_prices(soybeans_prices, extreme_hots, extreme_colds)
-soybeans_buy_signals = buy_signals(extreme_hots, extreme_colds, soybeans_prices)
-print(soybeans_buy_signals)
+extreme_hots, extreme_colds = plot_extremes(cotton_df)
+plot_prices(cotton_prices, extreme_hots, extreme_colds)
+cotton_buy_signals = buy_signals(extreme_hots, extreme_colds, cotton_prices)
+print(cotton_buy_signals)
 cash, annualized_return, portfolio_value = backtest_strategy(
-    soybeans_prices, soybeans_buy_signals, 6
+    cotton_prices, cotton_buy_signals, 6
 )
-plot_returns(soybeans_prices, soybeans_buy_signals, 8)
+plot_returns(cotton_prices, cotton_buy_signals, 6)
 best_months, best_pnl, cash_results, return_results = optimize_holding_period(
-    soybeans_prices, soybeans_buy_signals, 1, 12
+    cotton_prices, cotton_buy_signals, 1, 12
 )
 plot_optimization_results(cash_results, return_results, best_months)
