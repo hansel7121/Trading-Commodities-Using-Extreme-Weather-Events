@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 
 df = pd.read_csv("iowa_soybean_temps_10y.csv", index_col="Date", parse_dates=True)
 
-coffee_prices = yf.download(
+soybean_prices = yf.download(
     "ZS=F", start="2015-01-01", end="2025-11-24", auto_adjust=True
 )
-if isinstance(coffee_prices.columns, pd.MultiIndex):
-    coffee_prices.columns = coffee_prices.columns.droplevel(1)
+if isinstance(soybean_prices.columns, pd.MultiIndex):
+    soybean_prices.columns = soybean_prices.columns.droplevel(1)
 
 
 def plot_temperature(df):
@@ -32,7 +32,7 @@ def plot_extremes(df):
         if df["Min_Temp_C"][i] < -2 and df.index[i].month in [9, 10]:
             plt.plot(df.index[i], df["Min_Temp_C"][i], "b^", markersize=10)
             extreme_colds.append(df.index[i].date())
-    plt.title("Extreme Temperatures During Coffee Harvest")
+    plt.title("Extreme Temperatures During soybean Harvest")
     plt.xlabel("Date")
     plt.ylabel("Temperature (°C)")
     plt.legend()
@@ -54,7 +54,7 @@ def plot_prices(prices, extreme_hots, extreme_colds):
             plt.plot(date, prices.loc[date]["Close"], "bo", markersize=10)
         except KeyError:
             continue
-    plt.title("Coffee Prices During Extreme Temperatures")
+    plt.title("soybean Prices During Extreme Temperatures")
     plt.xlabel("Date")
     plt.ylabel("Price (USD)")
     plt.show()
@@ -99,7 +99,7 @@ def plot_returns(prices, buy_signals, holding_period):
             continue
 
         buy_price = prices.loc[buy_date]["Close"]
-        coffee_shares = cash / buy_price
+        soybean_shares = cash / buy_price
         target_sell_date = buy_date + pd.DateOffset(months=holding_period)
         idx = prices.index.get_indexer([target_sell_date], method="nearest")[0]
         sell_date = prices.index[idx]
@@ -108,9 +108,9 @@ def plot_returns(prices, buy_signals, holding_period):
             break
 
         period_prices = prices.loc[buy_date:sell_date]["Close"]
-        portfolio_value.loc[buy_date:sell_date] = coffee_shares * period_prices
+        portfolio_value.loc[buy_date:sell_date] = soybean_shares * period_prices
         sell_price = prices.loc[sell_date]["Close"]
-        cash = coffee_shares * sell_price
+        cash = soybean_shares * sell_price
         portfolio_value.loc[sell_date:] = cash
         busy_until_date = sell_date
 
@@ -135,6 +135,6 @@ def plot_returns(prices, buy_signals, holding_period):
 extreme_hots, extreme_colds = plot_extremes(df)
 print(extreme_hots)
 print(extreme_colds)
-plot_prices(coffee_prices, extreme_hots, extreme_colds)
-buy_signals = buy_signals(extreme_hots, extreme_colds, coffee_prices)
-cash, annual_returns = plot_returns(coffee_prices, buy_signals, 6)
+plot_prices(soybean_prices, extreme_hots, extreme_colds)
+buy_signals = buy_signals(extreme_hots, extreme_colds, soybean_prices)
+cash, annual_returns = plot_returns(soybean_prices, buy_signals, 6)
