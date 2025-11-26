@@ -1,4 +1,4 @@
-# Seasonal Trading (Trading Crop Commodities Based on Extreme Weather Events)
+# Seasonal Trading (Trading Crop and Animal Commodities Based on Extreme Weather Events)
 
 This repository contains a backtesting framework for trading crop commodities based on extreme weather events that directly affect the growth of the crop.
 
@@ -9,12 +9,12 @@ This repository contains a backtesting framework for trading crop commodities ba
 
 # Method
 
-Crop tend to surge in price when supply gets shocked by environmental factors. With global warming becoming a bigger issue than ever before, we decided to capitalize on these extreme weather conditions becoming more common. This strategy involves buying crops after their region experiences extreme temperatures that are unsustainable for the growth of the crop during its harvesting and growing seasons. We will then hold for a period of time and wait for the market to react back, which we will then liquidate our positions, hopefully with a profit.
+Crops tend to surge in price when supply is shocked by environmental factors. With global warming becoming a bigger issue than ever before, we decided to capitalize on these extreme weather conditions becoming more common. This strategy involves buying crops after their region experiences extreme temperatures that are unsustainable for the growth of the crop during its harvesting and growing seasons. We will then hold for a period of time and wait for the market to react back, and we will then liquidate our positions, hopefully with a profit.
 
 # Key Features
 
 - Uses NASA's satellite data to extract daily temperature highs and lows for the past decade. Location/region/elevation is fully customizable to match the locations the crops are grown in.
-- Based on a crop's optimal temperature, generates buy signals for extreme temperature deviations during critical time periods of the year (harvesting/flowering times).
+- Based on a crop's optimal temperature, it generates buy signals for extreme temperature deviations during critical time periods of the year (harvesting/flowering times).
 - Portfolio equity curve visualization
 
 # Usage
