@@ -59,10 +59,3 @@ df_coffee = get_coffee_data(LAT_VARGINHA, LON_VARGINHA)
 if df_coffee is not None:
     filename = 'varginha_coffee_temps_10y.csv'
     df_coffee.to_csv(filename)
-
-    print("-" * 30)
-    print(f"Success! Data saved to {filename}")
-    print("-" * 30)
-    print(df_coffee.head())
-    print("\nSummary Statistics:")
-    print(df_coffee.describe())

@@ -138,3 +138,5 @@ print(extreme_colds)
 plot_prices(wheat_prices, extreme_hots, extreme_colds)
 buy_signals = buy_signals(extreme_hots, extreme_colds, wheat_prices)
 cash, annual_returns = plot_returns(wheat_prices, buy_signals, 6)
+
+# Example of winter wheat not working because it is really resistant to changes to temperature.
