@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from datascience.util import make_array
 from datascience import *
 from datetime import datetime
-from coffee import get_coffee_buy_signals
+from coffee.coffee import get_coffee_buy_signals
 
 coffee_df = pd.read_csv(
     "crops_data/varginha_coffee_temps_10y.csv", index_col="Date", parse_dates=True

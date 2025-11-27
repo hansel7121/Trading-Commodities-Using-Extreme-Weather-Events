@@ -5,30 +5,30 @@ import matplotlib.pyplot as plt
 from datascience.util import make_array
 from datascience import *
 from datetime import datetime
-from corn import get_corn_buy_signals
+from soybeans.soybeans import get_soybeans_buy_signals
 
-corn_df = pd.read_csv(
-    "crops_data/iowa_corn_temps_10y.csv", index_col="Date", parse_dates=True
+soybeans_df = pd.read_csv(
+    "crops_data/iowa_soybean_temps_10y.csv", index_col="Date", parse_dates=True
 )
-corn_prices = yf.download(
-    "ZC=F", start="2015-01-01", end="2025-11-24", auto_adjust=True
+soybeans_prices = yf.download(
+    "ZS=F", start="2015-01-01", end="2025-11-24", auto_adjust=True
 )["Close"]
-if isinstance(corn_prices.columns, pd.MultiIndex):
-    corn_prices.columns = corn_prices.columns.droplevel(1)
+if isinstance(soybeans_prices.columns, pd.MultiIndex):
+    soybeans_prices.columns = soybeans_prices.columns.droplevel(1)
 
-corn_buy_signals = sorted(get_corn_buy_signals())
+soybeans_buy_signals = sorted(get_soybeans_buy_signals())
 
 
 # null hypothesis: positive return is due to random chance
 # alternate hypothesis: positive return is due to the strategy
 
-corn_signals_in_months = make_array()
-for signal in corn_buy_signals:
+soybeans_signals_in_months = make_array()
+for signal in soybeans_buy_signals:
     period = signal.to_period("M")
     # period = signal.strftime('%Y-%m')
-    if period not in corn_signals_in_months:
-        corn_signals_in_months = np.append(corn_signals_in_months, period)
-print(corn_signals_in_months)
+    if period not in soybeans_signals_in_months:
+        soybeans_signals_in_months = np.append(soybeans_signals_in_months, period)
+#print(soybeans_signals_in_months)
 
 
 # generate array of all months from 2015-01 to 2024-12
@@ -44,7 +44,7 @@ for i in range(120):
 # add True to yes_buy_signals_months if that month has a buy signal
 yes_buy_signals_months = np.array([], dtype=bool)
 for month in every_month:
-    if month in corn_signals_in_months:
+    if month in soybeans_signals_in_months:
         yes_buy_signals_months = np.append(yes_buy_signals_months, True)
     else:
         yes_buy_signals_months = np.append(yes_buy_signals_months, False)
@@ -78,7 +78,7 @@ def month_return(prices, buy_signal, holding_period):
 ten_month_return_every_month = []
 
 for i in range(len(every_month)):
-    annualized_return = month_return(corn_prices, every_month[i].to_timestamp(), 10)
+    annualized_return = month_return(soybeans_prices, every_month[i].to_timestamp(), 8)
     ten_month_return_every_month.append(annualized_return)
 
 
@@ -92,20 +92,20 @@ table = Table().with_columns(
 
 # observed data
 buy_signals_with_returns = table.select("Buy Signal", "Monthly Return")
-print(buy_signals_with_returns)
+#print(buy_signals_with_returns)
 means_table = buy_signals_with_returns.group("Buy Signal", np.average)
-print(means_table)
+#print(means_table)
 
 # Create histogram grouped by Buy Signal
 buy_signals_with_returns.hist("Monthly Return", group="Buy Signal")
-plt.title("Observed Distribution of Corn Monthly Return Based on Buy Signals")
-plt.savefig('corn_monthly_returns_histogram.png', dpi=300, bbox_inches='tight')
-print("Histogram saved as 'corn_monthly_returns_histogram.png'")
+plt.title("Observed Distribution of Soybeans Monthly Return Based on Buy Signals")
+plt.savefig('soybeans_monthly_returns_histogram.png', dpi=300, bbox_inches='tight')
+print("Histogram saved as 'soybeans_monthly_returns_histogram.png'")
 plt.close()  # Close the figure to free memory
 
 means = means_table.column("Monthly Return average")
 observed_difference = means[1] - means[0]
-print(observed_difference)
+print("Observed difference in means: " + str(observed_difference))
 
 
 # function to calculate difference in means given table with Buy Signal and Monthly Return columns
@@ -139,9 +139,9 @@ for i in np.arange(repetition):
 Table().with_column("Difference Between Group Means", differences).hist()
 plt.axvline(observed_difference, color='red', linestyle='--', linewidth=2, label=f'Observed Difference: {observed_difference:.4f}')
 plt.legend()
-plt.title("Prediction Under the Null Hypothesis for Corn")
-plt.savefig('corn_null_hypothesis_distribution.png', dpi=300, bbox_inches='tight')
-print("Null hypothesis distribution saved as 'corn_null_hypothesis_distribution.png'")
+plt.title("Prediction Under the Null Hypothesis for Soybeans")
+plt.savefig('soybeans_null_hypothesis_distribution.png', dpi=300, bbox_inches='tight')
+print("Null hypothesis distribution saved as 'soybeans_null_hypothesis_distribution.png'")
 plt.close()
 
 empirical_p_value = np.count_nonzero(differences >= observed_difference) / repetition

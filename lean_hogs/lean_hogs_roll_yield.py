@@ -112,6 +112,16 @@ def backtest_strategy(prices, buy_signals, holding_period):
         if busy_until_date is not None and buy_date < busy_until_date:
             continue
 
+        roll_months = []
+        for i in range(1, holding_period + 1):
+            if get_roll_months(buy_date + pd.DateOffset(months=i)):
+                roll_months.append(i)
+
+        total_drag = 1
+        for roll_month in roll_months:
+            drag = get_seasonal_drag(buy_date + pd.DateOffset(months=roll_month))
+            total_drag *= (1 - drag)
+
         buy_price = prices.loc[buy_date]["Close"]
         hogs_shares = cash / buy_price
         target_sell_date = buy_date + pd.DateOffset(months=holding_period)
@@ -124,7 +134,7 @@ def backtest_strategy(prices, buy_signals, holding_period):
         period_prices = prices.loc[buy_date:sell_date]["Close"]
         portfolio_value.loc[buy_date:sell_date] = hogs_shares * period_prices
         sell_price = prices.loc[sell_date]["Close"]
-        cash = hogs_shares * sell_price
+        cash = hogs_shares * sell_price * total_drag
         portfolio_value.loc[sell_date:] = cash
         busy_until_date = sell_date
 
@@ -157,7 +167,12 @@ def get_hogs_buy_signals():
     for i in range(len(hogs_df)):
         if hogs_df["Max_Temp_C"].iloc[i] > 38 and hogs_df.index[i].month in [13]:
             extreme_hots.append(hogs_df.index[i].date())
-        if hogs_df["Min_Temp_C"].iloc[i] < -20 and hogs_df.index[i].month in [12, 1, 2, 3]:
+        if hogs_df["Min_Temp_C"].iloc[i] < -20 and hogs_df.index[i].month in [
+            12,
+            1,
+            2,
+            3,
+        ]:
             extreme_colds.append(hogs_df.index[i].date())
 
     extreme_hots = pd.to_datetime(extreme_hots)
@@ -251,8 +266,35 @@ def plot_optimization_results(cash_results, return_results, best_months):
     plt.tight_layout()
     plt.show()
 
+def get_seasonal_drag(current_date):
+    month = current_date.month
+
+    # POSITIVE = You pay money (Cost/Contango)
+    # NEGATIVE = You make money (Yield/Backwardation)
+
+    if month in [12, 1, 2]:
+        return 0.10 / 6
+
+    elif month in [3, 4]:
+        return 0.25 / 6
+
+    elif month in [5, 6]:
+        return 0.00 / 6
+
+    elif month in [7, 8]:
+        return -0.20 / 6
+
+    elif month in [9, 10, 11]:
+        return -0.05 / 6
+
+def get_roll_months(current_date):
+    month = current_date.month
+    if month in [2, 4, 6, 8, 10, 12]:
+        return True
+    return False
 
 hogs_buy_signals = None
+
 
 
 extreme_hots, extreme_colds = plot_extremes(hogs_df)
@@ -262,7 +304,7 @@ print(hogs_buy_signals)
 cash, annualized_return, portfolio_value = backtest_strategy(
     hogs_prices, hogs_buy_signals, 6
 )
-plot_returns(hogs_prices, hogs_buy_signals, 6)
+plot_returns(hogs_prices, hogs_buy_signals, 7)
 best_months, best_pnl, cash_results, return_results = optimize_holding_period(
     hogs_prices, hogs_buy_signals, 1, 12
 )
