@@ -118,9 +118,8 @@ def backtest_strategy(prices, buy_signals, holding_period):
                 roll_months.append(i)
 
         total_drag = 1
-        for roll_month in roll_months:
-            drag = get_seasonal_drag(buy_date + pd.DateOffset(months=roll_month))
-            total_drag *= (1 - drag)
+        for i in range(len(roll_months)):
+            total_drag *= 1 - estimated_drag
 
         buy_price = prices.loc[buy_date]["Close"]
         corn_shares = cash / buy_price
@@ -262,32 +261,16 @@ def plot_optimization_results(cash_results, return_results, best_months):
     plt.tight_layout()
     plt.show()
 
-def get_seasonal_drag(current_date):
-    month = current_date.month
 
-    # POSITIVE = Cost (Contango) - The Default for Corn
-    # NEGATIVE = Benefit (Backwardation) - Rare, usually only pre-harvest
+estimated_drag = 0.02
 
-    if month in [12, 1, 2, 3]:
-        return 0.15 / 5
-
-    elif month in [4, 5]:
-        return 0.10 / 5
-
-    elif month in [6, 7]:
-        return 0.02 / 5
-
-    elif month in [8, 9]:
-        return -0.10 / 5
-
-    elif month in [10, 11]:
-        return 0.05 / 5
 
 def get_roll_months(current_date):
     month = current_date.month
     if month in [3, 5, 7, 9, 12]:
         return True
     return False
+
 
 corn_buy_signals = None
 

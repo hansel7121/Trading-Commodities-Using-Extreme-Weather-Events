@@ -118,9 +118,8 @@ def backtest_strategy(prices, buy_signals, holding_period):
                 roll_months.append(i)
 
         total_drag = 1
-        for roll_month in roll_months:
-            drag = get_seasonal_drag(buy_date + pd.DateOffset(months=roll_month))
-            total_drag *= (1 - drag)
+        for i in range(len(roll_months)):
+            total_drag *= 1 - estimated_drag
 
         buy_price = prices.loc[buy_date]["Close"]
         hogs_shares = cash / buy_price
@@ -266,26 +265,9 @@ def plot_optimization_results(cash_results, return_results, best_months):
     plt.tight_layout()
     plt.show()
 
-def get_seasonal_drag(current_date):
-    month = current_date.month
 
-    # POSITIVE = You pay money (Cost/Contango)
-    # NEGATIVE = You make money (Yield/Backwardation)
+estimated_drag = 0.025
 
-    if month in [12, 1, 2]:
-        return 0.10 / 6
-
-    elif month in [3, 4]:
-        return 0.25 / 6
-
-    elif month in [5, 6]:
-        return 0.00 / 6
-
-    elif month in [7, 8]:
-        return -0.20 / 6
-
-    elif month in [9, 10, 11]:
-        return -0.05 / 6
 
 def get_roll_months(current_date):
     month = current_date.month
@@ -293,8 +275,8 @@ def get_roll_months(current_date):
         return True
     return False
 
-hogs_buy_signals = None
 
+hogs_buy_signals = None
 
 
 extreme_hots, extreme_colds = plot_extremes(hogs_df)

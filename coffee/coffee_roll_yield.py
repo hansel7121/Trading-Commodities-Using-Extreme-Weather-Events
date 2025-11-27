@@ -118,9 +118,8 @@ def backtest_strategy(prices, buy_signals, holding_period):
                 roll_months.append(i)
 
         total_drag = 1
-        for roll_month in roll_months:
-            drag = get_seasonal_drag(buy_date + pd.DateOffset(months=roll_month))
-            total_drag *= (1 - drag)
+        for i in range(len(roll_months)):
+            total_drag *= 1 - estimated_drag
 
         buy_price = prices.loc[buy_date]["Close"]
         coffee_shares = cash / buy_price
@@ -167,7 +166,11 @@ def get_coffee_buy_signals():
     for i in range(len(coffee_df)):
         if coffee_df["Max_Temp_C"].iloc[i] > 33 and coffee_df.index[i].month in [9, 10]:
             extreme_hots.append(coffee_df.index[i].date())
-        if coffee_df["Min_Temp_C"].iloc[i] < 2 and coffee_df.index[i].month in [6, 7, 8]:
+        if coffee_df["Min_Temp_C"].iloc[i] < 2 and coffee_df.index[i].month in [
+            6,
+            7,
+            8,
+        ]:
             extreme_colds.append(coffee_df.index[i].date())
 
     extreme_hots = pd.to_datetime(extreme_hots)
@@ -261,32 +264,16 @@ def plot_optimization_results(cash_results, return_results, best_months):
     plt.tight_layout()
     plt.show()
 
-def get_seasonal_drag(current_date):
-    month = current_date.month
 
-    # POSITIVE = Cost (Contango) - The norm for Coffee
-    # NEGATIVE = Benefit (Backwardation) - Very rare
+estimated_drag = 0.015
 
-    if month in [3, 4]:
-        return 0.15 / 5
-
-    elif month in [5, 6, 7]:
-        return 0.18 / 5
-
-    elif month in [8, 9]:
-        return 0.12 / 5
-
-    elif month in [10, 11, 12]:
-        return 0.05 / 5
-
-    elif month in [1, 2]:
-        return 0.10 / 5
 
 def get_roll_months(current_date):
     month = current_date.month
     if month in [3, 5, 7, 9, 12]:
         return True
     return False
+
 
 coffee_buy_signals = None
 

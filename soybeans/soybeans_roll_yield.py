@@ -1,4 +1,3 @@
-
 import pandas as pd
 import yfinance as yf
 import numpy as np
@@ -119,9 +118,8 @@ def backtest_strategy(prices, buy_signals, holding_period):
                 roll_months.append(i)
 
         total_drag = 1
-        for roll_month in roll_months:
-            drag = get_seasonal_drag(buy_date + pd.DateOffset(months=roll_month))
-            total_drag *= (1 - drag)
+        for i in range(len(roll_months)):
+            total_drag *= 1 - estimated_drag
 
         buy_price = prices.loc[buy_date]["Close"]
         soybeans_shares = cash / buy_price
@@ -169,7 +167,10 @@ def get_soybeans_buy_signals():
     for i in range(len(soybeans_df)):
         if soybeans_df["Max_Temp_C"].iloc[i] > 33 and soybeans_df.index[i].month in [8]:
             extreme_hots.append(soybeans_df.index[i].date())
-        if soybeans_df["Min_Temp_C"].iloc[i] < -2 and soybeans_df.index[i].month in [9, 10]:
+        if soybeans_df["Min_Temp_C"].iloc[i] < -2 and soybeans_df.index[i].month in [
+            9,
+            10,
+        ]:
             extreme_colds.append(soybeans_df.index[i].date())
 
     extreme_hots = pd.to_datetime(extreme_hots)
@@ -263,29 +264,16 @@ def plot_optimization_results(cash_results, return_results, best_months):
     plt.tight_layout()
     plt.show()
 
-def get_seasonal_drag(current_date):
-    month = current_date.month
 
-    if month in [1, 2, 3]:
-        return 0.12 / 7
+estimated_drag = 0.015
 
-    elif month in [4, 5, 6]:
-        return 0.08 / 7
-
-    elif month in [7, 8]:
-        return -0.15 / 7
-
-    elif month in [9]:
-        return -0.30 / 7
-
-    elif month in [10, 11, 12]:
-        return 0.10 / 7
 
 def get_roll_months(current_date):
     month = current_date.month
     if month in [1, 3, 5, 7, 8, 9, 11]:
         return True
     return False
+
 
 soybeans_buy_signals = None
 
